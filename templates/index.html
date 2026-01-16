@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mr.Ghost Hosting Panel</title>
+    <meta charset="utf-8">
+
+    <style>
+        /* মূল ব্যাকগ্রাউন্ড এবং ক্যানভাস সেটিংস */
+        body {
+            background: #0d0d0d;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* কন্টেন্টের নিচে থাকবে */
+        }
+
+        /* কালার কন্ট্রোলার স্টাইল */
+        .color-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(21, 21, 21, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            z-index: 100;
+        }
+
+        .color-control label {
+            font-size: 12px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* আপনার আগের স্টাইলগুলো এখানে থাকবে */
+        h1 { text-align: center; color: #00ffcc; margin-top: 30px; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+        .box { border: 1px solid #333; margin: 15px; padding: 15px; border-radius: 8px; background: rgba(21, 21, 21, 0.9); backdrop-filter: blur(5px); }
+        button { padding: 7px 14px; margin: 3px; border: none; cursor: pointer; border-radius: 4px; transition: 0.3s; }
+        .run { background: #1abc9c; color: black; }
+        .stop { background: #e74c3c; color: white; }
+        .restart { background: #f39c12; color: black; }
+        .delete { background: #555; color: white; }
+        pre { background: rgba(0, 0, 0, 0.8); color: #00ff00; padding: 10px; height: 220px; overflow-y: auto; border-radius: 5px; font-size: 13px; }
+        .status-running { color: #00ff00; font-weight: bold; }
+        .status-stopped { color: #ff4d4d; font-weight: bold; }
+        .upload-box { text-align: center; margin: 20px; }
+    </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="color-control">
+    <label>Change Glow Color</label>
+    <input type="color" id="accentColor" value="#00ffcc">
+</div>
+
+<h1>👻 Mr.Ghost Hosting Panel</h1>
+
+<div class="upload-box">
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".zip">
+        <button type="submit" class="run">📤 Upload ZIP</button>
+    </form>
+</div>
+
+{% for app in apps %}
+<div class="box">
+    <h3>
+        {{ app.name }} —
+        {% if app.running %}
+            <span class="status-running">RUNNING</span>
+        {% else %}
+            <span class="status-stopped">STOPPED</span>
+        {% endif %}
+    </h3>
+
+    <div>
+        <a href="/run/{{ app.name }}"><button class="run">▶ Run</button></a>
+        <a href="/stop/{{ app.name }}"><button class="stop">🛑 Stop</button></a>
+        <a href="/restart/{{ app.name }}"><button class="restart">🔄 Restart</button></a>
+        <a href="/delete/{{ app.name }}" onclick="return confirm('Are you sure?')">
+            <button class="delete">🗑 Delete</button>
+        </a>
+    </div>
+
+    <h4>📟 Live Console</h4>
+    <pre>{{ app.log }}</pre>
+</div>
+{% endfor %}
+
+<script>
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    const colorInput = document.getElementById('accentColor');
+    
+    let particles = [];
+    let accentColor = colorInput.value;
+
+    // ক্যানভাস সাইজ ঠিক করা
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // কালার পরিবর্তন হ্যান্ডলার
+    colorInput.addEventListener('input', (e) => {
+        accentColor = e.target.value;
+        document.querySelector('h1').style.color = accentColor;
+    });
+
+    class Particle {
+        constructor() {
+            this.init();
+        }
+        init() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.speedX = (Math.random() - 0.5) * 0.8;
+            this.speedY = (Math.random() - 0.5) * 0.8;
+            this.size = Math.random() * 2;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+            if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+        }
+        draw() {
+            ctx.fillStyle = accentColor;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function initParticles() {
+        for (let i = 0; i < 80; i++) {
+            particles.push(new Particle());
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+
+    initParticles();
+    animate();
+</script>
+
+</body>
+</html>
